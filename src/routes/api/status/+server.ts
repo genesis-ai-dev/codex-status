@@ -6,7 +6,7 @@ const DEFAULT_SERVICES: ServiceCheck[] = [
   { id: 'extended-health', name: 'Extended Health', status: 'unknown', uptimePercent: 0, lastCheck: '' },
   { id: 'dashboard', name: 'Cloud Sync', status: 'unknown', uptimePercent: 0, lastCheck: '' },
   { id: 'auth', name: 'Authentication', status: 'unknown', uptimePercent: 0, lastCheck: '' },
-  { id: 'llm', name: 'LLM Completions', status: 'unknown', uptimePercent: 0, lastCheck: '' }
+  { id: 'llm', name: 'AI Predictions', status: 'unknown', uptimePercent: 0, lastCheck: '' }
 ];
 
 const DEFAULT_PAYLOAD: StatusPayload = {

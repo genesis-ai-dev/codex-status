@@ -1,13 +1,15 @@
 <script lang="ts">
   import UptimeBar from './UptimeBar.svelte';
-  import type { ServiceCheck, DayRollup } from '$lib/types';
+  import type { ServiceCheck, DayRollup, Incident } from '$lib/types';
 
   interface Props {
     service: ServiceCheck;
     history: DayRollup[];
+    incidents?: Incident[];
+    onSegmentClick?: (date: string) => void;
   }
 
-  let { service, history }: Props = $props();
+  let { service, history, incidents = [], onSegmentClick }: Props = $props();
 
   const hasData = service.status !== 'unknown';
   const statusLabel = $derived(
@@ -57,5 +59,10 @@
       · Monitoring pending
     {/if}
   </p>
-  <UptimeBar {history} />
+  <UptimeBar
+    {history}
+    {incidents}
+    {onSegmentClick}
+    todayUptime={hasData ? service.uptimePercent : null}
+  />
 </div>

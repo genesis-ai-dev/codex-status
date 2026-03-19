@@ -6,6 +6,14 @@
 
   let data = $state<StatusPayload | null>(null);
   let error = $state<string | null>(null);
+  let selectedDate = $state<string | null>(null);
+
+  function handleSegmentClick(date: string) {
+    selectedDate = date;
+    requestAnimationFrame(() => {
+      document.getElementById('incidents')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
 
   onMount(() => {
     fetch('/api/status')
@@ -93,13 +101,19 @@
           <ServiceCard
             {service}
             history={data.history?.[service.id] ?? []}
+            incidents={data.incidents ?? []}
+            onSegmentClick={handleSegmentClick}
           />
         {/each}
       </div>
     </section>
 
     <section class="mb-8">
-      <IncidentFeed incidents={data.incidents ?? []} />
+      <IncidentFeed
+        incidents={data.incidents ?? []}
+        dateFilter={selectedDate ?? undefined}
+        onClearDateFilter={() => (selectedDate = null)}
+      />
     </section>
 
     <p class="text-center text-xs text-[var(--muted-foreground)]">

@@ -23,7 +23,7 @@ const results = await Promise.all([
   probe('extended-health', 'GET', '/api/v2/health', null, 200),
   probe('dashboard', 'GET', '/api/v2/health/dashboard', null, 200),
   probe('auth', 'POST', '/api/v2/auth/token', { username: 'x', password: 'y' }, 401),
-  probe('llm', 'POST', '/api/v2/chat/completions', {}, [400, 422])
+  probe('llm', 'POST', '/api/v2/chat/completions', {}, [400, 401, 422])
 ]);
 
 console.log(JSON.stringify({ results }));

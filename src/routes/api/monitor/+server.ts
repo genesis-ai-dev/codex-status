@@ -6,7 +6,7 @@ const SERVICES: Array<{ id: string; name: string }> = [
   { id: 'extended-health', name: 'Extended Health' },
   { id: 'dashboard', name: 'Cloud Sync' },
   { id: 'auth', name: 'Authentication' },
-  { id: 'llm', name: 'LLM Completions' }
+  { id: 'llm', name: 'AI Predictions' }
 ];
 
 function getStatus(ok: boolean, statusCode?: number): ServiceCheck['status'] {
