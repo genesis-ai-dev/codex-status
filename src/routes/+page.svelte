@@ -2,10 +2,16 @@
   import { onMount } from 'svelte';
   import ServiceCard from '$lib/components/ServiceCard.svelte';
   import IncidentFeed from '$lib/components/IncidentFeed.svelte';
-  import type { StatusPayload } from '$lib/types';
+  import type { StatusPayload, ProbePayload } from '$lib/types';
 
-  let data = $state<StatusPayload | null>(null);
-  let error = $state<string | null>(null);
+  // Live probe state
+  let probe = $state<ProbePayload | null>(null);
+  let probeError = $state(false);
+  let probeAge = $state<number | null>(null); // seconds since probe ran
+
+  // Historical state
+  let history = $state<StatusPayload | null>(null);
+
   let selectedDate = $state<string | null>(null);
 
   function handleSegmentClick(date: string) {
@@ -16,92 +22,133 @@
   }
 
   onMount(() => {
-    fetch('/api/status')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
-      .then((payload: StatusPayload) => {
-        data = payload;
-        error = null;
+    // Run both fetches in parallel — they're independent
+    fetch('/api/probe')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((p: ProbePayload) => {
+        probe = p;
+        probeError = false;
+        // Keep the "X seconds ago" counter ticking
+        const tick = () => {
+          if (!probe) return;
+          probeAge = Math.round((Date.now() - new Date(probe.probeTime).getTime()) / 1000);
+          setTimeout(tick, 5000);
+        };
+        tick();
       })
-      .catch((e) => {
-        error = e.message || 'Failed to load status';
-        data = null;
-      });
+      .catch(() => { probeError = true; });
+
+    fetch('/api/status')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((p: StatusPayload) => { history = p; })
+      .catch(() => {});
   });
 
   const overallStatus = $derived.by(() => {
-    if (!data) return 'loading';
-    const services = data.services ?? [];
-    const hasData = services.some((s) => s.status !== 'unknown');
-    if (!hasData) return 'no-data';
-    const hasOutage = services.some((s) => s.status === 'outage');
-    const hasDegraded = services.some((s) => s.status === 'degraded');
-    if (hasOutage) return 'outage';
-    if (hasDegraded) return 'degraded';
+    if (!probe) return 'loading';
+    if (probeError) return 'error';
+    if (probe.services.some((s) => s.status === 'outage')) return 'outage';
+    if (probe.services.some((s) => s.status === 'degraded')) return 'degraded';
     return 'operational';
   });
 
-  const bannerClass = $derived(
+  const bannerConfig = $derived(
     overallStatus === 'operational'
-      ? 'bg-[var(--codex-teal)]/20 text-[var(--codex-teal)] border-[var(--codex-teal)]/40'
+      ? { label: 'All Systems Operational', cls: 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300' }
       : overallStatus === 'degraded'
-        ? 'bg-[var(--codex-gold)]/20 text-[var(--codex-gold)] border-[var(--codex-gold)]/40'
-        : overallStatus === 'no-data'
-          ? 'bg-[var(--muted)]/30 text-[var(--muted-foreground)] border-[var(--border)]'
-          : 'bg-[var(--codex-outage)]/20 text-[var(--codex-outage)] border-[var(--codex-outage)]/40'
+        ? { label: 'Partial Degradation', cls: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-300' }
+        : overallStatus === 'outage'
+          ? { label: 'Service Disruption', cls: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300' }
+          : { label: 'Checking…', cls: 'border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]' }
   );
 
-  const bannerLabel = $derived(
-    overallStatus === 'operational'
-      ? 'All Systems Operational'
-      : overallStatus === 'degraded'
-        ? 'Partial System Degradation'
-        : overallStatus === 'no-data'
-          ? 'Waiting for monitoring data'
-          : 'System Outage'
-  );
+  const dotColor = (status: string) =>
+    status === 'operational' ? 'var(--status-ok)'
+    : status === 'degraded' ? 'var(--status-degraded)'
+    : status === 'outage' ? 'var(--status-outage)'
+    : 'var(--muted-foreground)';
+
+  const statusLabel = (status: string) =>
+    status === 'operational' ? 'Operational'
+    : status === 'degraded' ? 'Degraded'
+    : status === 'outage' ? 'Outage'
+    : 'Checking…';
+
+  const probeAgeLabel = $derived.by(() => {
+    if (probeAge === null) return null;
+    if (probeAge < 5) return 'just now';
+    if (probeAge < 60) return `${probeAge}s ago`;
+    return `${Math.round(probeAge / 60)}m ago`;
+  });
 </script>
 
 <svelte:head>
-  <title>Codex Status | API Uptime</title>
+  <title>Codex Status</title>
   <meta name="description" content="Real-time status for Codex API services." />
 </svelte:head>
 
-<div class="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-  <header class="mb-12 text-center">
-    <h1 class="accent-gradient mb-2 font-[family-name:var(--font-display)] text-4xl font-bold sm:text-5xl">
-      Codex Status
-    </h1>
-    <p class="text-[var(--muted-foreground)]">
-      Real-time status for Codex API services
-    </p>
+<div class="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+  <header class="mb-10">
+    <h1 class="text-2xl font-semibold tracking-tight">Codex Status</h1>
+    <p class="mt-1 text-sm text-[var(--muted-foreground)]">Real-time status for Codex API services</p>
   </header>
 
-  {#if error}
-    <div
-      class="mb-8 rounded-lg border border-[var(--codex-outage)]/40 bg-[var(--codex-outage)]/10 p-4 text-center"
-    >
-      <p class="text-[var(--codex-outage)]">{error}</p>
-      <p class="mt-1 text-sm text-[var(--muted-foreground)]">
-        Monitoring may not have run yet. Check back shortly.
-      </p>
-    </div>
-  {:else if data}
-    <div
-      class="mb-8 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 {bannerClass}"
-    >
-      <span class="font-medium">{bannerLabel}</span>
+  <!-- Live current status -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-center justify-between">
+      <p class="text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Current Status</p>
+      {#if probeAgeLabel}
+        <span class="text-xs text-[var(--muted-foreground)]">Checked {probeAgeLabel}</span>
+      {/if}
     </div>
 
-    <section class="mb-12">
-      <h2 class="mb-4 font-[family-name:var(--font-display)] text-xl font-semibold">
-        Services
-      </h2>
-      <div class="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-        {#each data.services ?? [] as service (service.id)}
+    <div class="mb-4 rounded-md border px-4 py-3 text-sm font-medium {bannerConfig.cls}">
+      {bannerConfig.label}
+    </div>
+
+    {#if probe}
+      <ul class="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
+        {#each probe.services as svc (svc.id)}
+          <li class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-2.5">
+              <span
+                class="h-2 w-2 shrink-0 rounded-full"
+                style="background-color: {dotColor(svc.status)}"
+                aria-hidden="true"
+              ></span>
+              <span class="text-sm">{svc.name}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              {#if svc.ms !== null}
+                <span class="text-xs text-[var(--muted-foreground)]">{svc.ms}ms</span>
+              {/if}
+              <span class="text-xs font-medium" style="color: {dotColor(svc.status)}">
+                {statusLabel(svc.status)}
+              </span>
+            </div>
+          </li>
+        {/each}
+      </ul>
+    {:else if probeError}
+      <p class="text-sm text-[var(--muted-foreground)]">Live check unavailable.</p>
+    {:else}
+      <div class="flex items-center gap-2 py-4 text-sm text-[var(--muted-foreground)]">
+        <div class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--foreground)]"></div>
+        Checking services…
+      </div>
+    {/if}
+  </section>
+
+  <!-- Historical uptime -->
+  {#if history}
+    <section class="mb-10">
+      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">90-Day Uptime</p>
+      <div class="space-y-3">
+        {#each (history.services ?? []) as service (service.id)}
           <ServiceCard
             {service}
-            history={data.history?.[service.id] ?? []}
-            incidents={data.incidents ?? []}
+            history={history.history?.[service.id] ?? []}
+            incidents={history.incidents ?? []}
             onSegmentClick={handleSegmentClick}
           />
         {/each}
@@ -110,26 +157,20 @@
 
     <section class="mb-8">
       <IncidentFeed
-        incidents={data.incidents ?? []}
+        incidents={history.incidents ?? []}
         dateFilter={selectedDate ?? undefined}
         onClearDateFilter={() => (selectedDate = null)}
       />
     </section>
 
     <p class="text-center text-xs text-[var(--muted-foreground)]">
-      Last updated {data.lastUpdated ?? '—'}
+      History last updated {history.lastUpdated ?? '—'}
     </p>
-  {:else}
-    <div class="flex justify-center py-12">
-      <div
-        class="h-8 w-8 animate-spin rounded-full border-2 border-[var(--codex-teal)] border-t-transparent"
-        aria-label="Loading"
-      ></div>
-    </div>
   {/if}
 
-  <footer class="mt-12 text-center text-xs text-[var(--muted-foreground)]">
-    <a href="https://codexeditor.app" class="text-[var(--codex-teal)] hover:underline">Codex</a>
-    · <a href="/admin" class="hover:text-[var(--codex-teal)]">Admin</a>
+  <footer class="mt-12 border-t border-[var(--border)] pt-6 text-center text-xs text-[var(--muted-foreground)]">
+    <a href="https://codexeditor.app" class="hover:text-[var(--foreground)]">Codex</a>
+    <span class="mx-2">·</span>
+    <a href="/admin" class="hover:text-[var(--foreground)]">Admin</a>
   </footer>
 </div>

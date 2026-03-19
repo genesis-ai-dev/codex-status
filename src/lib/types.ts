@@ -38,3 +38,15 @@ export interface IncidentUpdate {
   body: string;
   timestamp: string;
 }
+
+export interface LiveServiceResult {
+  id: string;
+  name: string;
+  status: ServiceStatus;
+  ms: number | null;
+}
+
+export interface ProbePayload {
+  services: LiveServiceResult[];
+  probeTime: string;
+}

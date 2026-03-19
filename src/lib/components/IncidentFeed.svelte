@@ -21,16 +21,15 @@
       : incidents
   );
 
-  const statusColors: Record<Incident['status'], string> = {
-    investigating: 'bg-[var(--codex-gold)] text-[var(--codex-deep)]',
-    identified: 'bg-[var(--codex-gold)] text-[var(--codex-deep)]',
-    monitoring: 'bg-[var(--codex-teal)]/20 text-[var(--codex-teal)]',
+  const statusBadge: Record<Incident['status'], string> = {
+    investigating: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+    identified: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400',
+    monitoring: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
     resolved: 'bg-[var(--muted)] text-[var(--muted-foreground)]'
   };
 
   function formatDate(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', {
+    return new Date(iso).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -40,43 +39,42 @@
   }
 </script>
 
-<div id="incidents" class="space-y-4 scroll-mt-24">
-  <h2 class="font-[family-name:var(--font-display)] text-xl font-semibold">
-    Incident History
+<div id="incidents" class="scroll-mt-24">
+  <div class="mb-3 flex items-center gap-2">
+    <p class="text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
+      Incident History
+    </p>
     {#if dateFilter}
-      <span class="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
-        · {new Date(dateFilter + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        {#if onClearDateFilter}
-          <button
-            type="button"
-            class="ml-1 text-[var(--codex-teal)] hover:underline"
-            onclick={onClearDateFilter}
-          >
-            Show all
-          </button>
-        {/if}
+      <span class="text-xs text-[var(--muted-foreground)]">
+        — {new Date(dateFilter + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
       </span>
+      {#if onClearDateFilter}
+        <button
+          type="button"
+          class="text-xs text-[var(--muted-foreground)] underline hover:text-[var(--foreground)]"
+          onclick={onClearDateFilter}
+        >
+          Clear
+        </button>
+      {/if}
     {/if}
-  </h2>
+  </div>
+
   {#if filteredIncidents.length === 0}
     <p class="text-sm text-[var(--muted-foreground)]">
       {dateFilter ? 'No incidents on this day.' : 'No incidents in the past 90 days.'}
     </p>
   {:else}
-    <ul class="space-y-4">
+    <ul class="space-y-3">
       {#each filteredIncidents as incident (incident.id)}
-        <li
-          class="rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] p-4"
-        >
-          <div class="mb-2 flex items-center justify-between gap-2">
-            <span class="font-medium">{incident.title}</span>
-            <span
-              class="rounded px-2 py-0.5 text-xs font-medium capitalize {statusColors[incident.status]}"
-            >
+        <li class="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <div class="mb-1.5 flex items-start justify-between gap-3">
+            <span class="text-sm font-medium">{incident.title}</span>
+            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize {statusBadge[incident.status]}">
               {incident.status}
             </span>
           </div>
-          <p class="mb-2 text-xs text-[var(--muted-foreground)]">
+          <p class="mb-3 text-xs text-[var(--muted-foreground)]">
             {incident.services.join(', ')} · {formatDate(incident.createdAt)}
             {#if incident.resolvedAt}
               · Resolved {formatDate(incident.resolvedAt)}
@@ -84,11 +82,11 @@
           </p>
           <div class="space-y-2">
             {#each incident.updates as update (update.timestamp)}
-              <div class="border-l-2 border-[var(--muted)] pl-3 text-sm">
-                <span class="text-xs text-[var(--muted-foreground)]">
-                  {formatDate(update.timestamp)} · {update.status}
-                </span>
-                <p class="mt-0.5">{update.body}</p>
+              <div class="border-l-2 border-[var(--border)] pl-3">
+                <p class="text-xs text-[var(--muted-foreground)]">
+                  {formatDate(update.timestamp)} · <span class="capitalize">{update.status}</span>
+                </p>
+                <p class="mt-0.5 text-sm">{update.body}</p>
               </div>
             {/each}
           </div>

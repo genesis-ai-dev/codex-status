@@ -1,5 +1,4 @@
-# Copy to .dev.vars and fill in. Used for local `wrangler pages dev`.
-# Do NOT commit .dev.vars.
+# Copy this file to .dev.vars and fill in values for local development.
+# In production, set these as Cloudflare Pages secrets via the dashboard.
 
-ADMIN_API_KEY=your-admin-secret-key
-MONITOR_API_KEY=your-monitor-secret-key
+ADMIN_API_KEY=change-me

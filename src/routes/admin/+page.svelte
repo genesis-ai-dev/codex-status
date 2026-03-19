@@ -16,9 +16,24 @@
   ];
 
   let createTitle = $state('');
+  let createStatus = $state<Incident['status']>('investigating');
+  let createNote = $state('');
   let createServicesChecked = $state<Record<string, boolean>>(
     Object.fromEntries(SERVICE_OPTIONS.map((s) => [s.id, false]))
   );
+
+  const checkedServiceNames = $derived(
+    SERVICE_OPTIONS.filter((s) => createServicesChecked[s.id]).map((s) => s.name)
+  );
+
+  const notePlaceholder = $derived.by(() => {
+    if (checkedServiceNames.length === 0) return 'Brief description of the issue…';
+    const list =
+      checkedServiceNames.length === 1
+        ? checkedServiceNames[0]
+        : checkedServiceNames.slice(0, -1).join(', ') + ' and ' + checkedServiceNames.at(-1);
+    return `We are investigating an issue affecting ${list}.`;
+  });
   let updateIncidentId = $state('');
   let updateStatus = $state<Incident['status']>('monitoring');
   let updateBody = $state('');
@@ -68,6 +83,8 @@
       },
       body: JSON.stringify({
         title: createTitle.trim(),
+        status: createStatus,
+        note: createNote.trim() || notePlaceholder,
         services
       })
     });
@@ -76,6 +93,8 @@
       return;
     }
     createTitle = '';
+    createStatus = 'investigating';
+    createNote = '';
     createServicesChecked = Object.fromEntries(SERVICE_OPTIONS.map((s) => [s.id, false]));
     await fetchIncidents();
   }
@@ -115,7 +134,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-  <h1 class="accent-gradient mb-8 font-[family-name:var(--font-display)] text-3xl font-bold">
+  <h1 class="mb-8 text-2xl font-semibold tracking-tight">
     Incident Admin
   </h1>
 
@@ -160,7 +179,7 @@
     {/if}
 
     <section class="mb-8">
-      <h2 class="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold">
+      <h2 class="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
         Create Incident
       </h2>
       <form onsubmit={handleCreate} class="space-y-3">
@@ -170,9 +189,18 @@
           placeholder="Incident title"
           class="w-full rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm"
         />
+        <select
+          bind:value={createStatus}
+          class="w-full rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm"
+        >
+          <option value="investigating">Investigating</option>
+          <option value="identified">Identified</option>
+          <option value="monitoring">Monitoring</option>
+          <option value="resolved">Resolved</option>
+        </select>
         <fieldset class="space-y-2">
           <legend class="text-sm text-[var(--muted-foreground)]">
-            Affected services (check all that apply)
+            Affected services
           </legend>
           <div class="flex flex-wrap gap-4">
             {#each SERVICE_OPTIONS as opt (opt.id)}
@@ -187,6 +215,12 @@
             {/each}
           </div>
         </fieldset>
+        <textarea
+          bind:value={createNote}
+          placeholder={notePlaceholder}
+          rows="2"
+          class="w-full rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm placeholder:text-[var(--muted-foreground)]/60"
+        ></textarea>
         <button
           type="submit"
           class="rounded-lg bg-[var(--codex-teal)] px-4 py-2 text-sm font-medium text-[var(--codex-deep)]"
@@ -197,7 +231,7 @@
     </section>
 
     <section class="mb-8">
-      <h2 class="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold">
+      <h2 class="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
         Update Incident
       </h2>
       <form onsubmit={handleUpdate} class="space-y-3">
@@ -235,7 +269,7 @@
     </section>
 
     <section>
-      <h2 class="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold">
+      <h2 class="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
         Incidents
       </h2>
       {#if loading}

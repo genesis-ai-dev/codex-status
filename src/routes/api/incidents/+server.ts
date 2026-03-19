@@ -27,6 +27,9 @@ export const GET: RequestHandler = async ({ platform }) => {
 export const POST: RequestHandler = async ({ request, platform }) => {
   const kv = platform?.env?.CODEX_STATUS;
   const adminKey = platform?.env?.ADMIN_API_KEY;
+  if (!adminKey) {
+    return new Response('ADMIN_API_KEY not configured on server', { status: 503 });
+  }
   if (!requireAdmin(request, adminKey)) {
     return new Response('Unauthorized', { status: 401 });
   }
@@ -35,19 +38,20 @@ export const POST: RequestHandler = async ({ request, platform }) => {
   }
 
   const body = await request.json();
-  const { title, services = [], status = 'investigating' } = body;
+  const { title, services = [], status = 'investigating', note } = body;
   if (!title || typeof title !== 'string') {
     return Response.json({ error: 'title required' }, { status: 400 });
   }
 
   const id = `inc-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const now = new Date().toISOString();
+  const initialBody = typeof note === 'string' && note.trim() ? note.trim() : 'Incident created.';
   const incident: Incident = {
     id,
     title,
     status,
     services: Array.isArray(services) ? services : [],
-    updates: [{ status, body: 'Incident created.', timestamp: now }],
+    updates: [{ status, body: initialBody, timestamp: now }],
     createdAt: now
   };
 
@@ -63,6 +67,9 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 export const PATCH: RequestHandler = async ({ request, platform }) => {
   const kv = platform?.env?.CODEX_STATUS;
   const adminKey = platform?.env?.ADMIN_API_KEY;
+  if (!adminKey) {
+    return new Response('ADMIN_API_KEY not configured on server', { status: 503 });
+  }
   if (!requireAdmin(request, adminKey)) {
     return new Response('Unauthorized', { status: 401 });
   }

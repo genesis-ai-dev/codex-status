@@ -22,6 +22,6 @@ r1=$(probe "api-health" "GET" "/health" "" "200")
 r2=$(probe "extended-health" "GET" "/api/v2/health" "" "200")
 r3=$(probe "dashboard" "GET" "/api/v2/health/dashboard" "" "200")
 r4=$(probe "auth" "POST" "/api/v2/auth/token" '{"username":"x","password":"y"}' "401")
-r5=$(probe "llm" "POST" "/api/v2/chat/completions" '{}' "400")
+r5=$(probe "llm" "POST" "/api/v2/chat/completions" '{}' "401")
 
 echo "{\"results\":[$r1,$r2,$r3,$r4,$r5]}"

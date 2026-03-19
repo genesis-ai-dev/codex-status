@@ -11,58 +11,30 @@
 
   let { service, history, incidents = [], onSegmentClick }: Props = $props();
 
-  const hasData = service.status !== 'unknown';
-  const statusLabel = $derived(
-    service.status === 'operational'
-      ? 'Operational'
-      : service.status === 'degraded'
-        ? 'Degraded'
-        : service.status === 'outage'
-          ? 'Outage'
-          : 'No data'
-  );
+  const hasData = history.length > 0;
 
-  const dotColor = $derived(
-    service.status === 'operational'
-      ? 'var(--codex-teal)'
-      : service.status === 'degraded'
-        ? 'var(--codex-gold)'
-        : service.status === 'outage'
-          ? 'var(--codex-outage)'
-          : 'var(--muted-foreground)'
-  );
+  const uptimePercent = $derived.by(() => {
+    if (!hasData) return null;
+    const sum = history.reduce((acc, d) => acc + d.uptime, 0);
+    return sum / history.length;
+  });
 </script>
 
-<div
-  class="rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] p-4"
->
+<div class="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
   <div class="mb-2 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span
-        class="h-2.5 w-2.5 shrink-0 rounded-full"
-        style="background-color: {dotColor}"
-        aria-hidden="true"
-      ></span>
-      <span class="font-[family-name:var(--font-display)] text-lg font-medium">
-        {service.name}
-      </span>
-    </div>
-    <span class="text-sm text-[var(--muted-foreground)]">
-      {hasData ? `${service.uptimePercent.toFixed(1)}% uptime` : '—'}
+    <span class="text-sm font-medium">{service.name}</span>
+    <span class="text-xs text-[var(--muted-foreground)]">
+      {uptimePercent !== null ? `${uptimePercent.toFixed(2)}% uptime` : 'No data'}
     </span>
   </div>
-  <p class="mb-3 text-xs text-[var(--muted-foreground)]">
-    {statusLabel}
-    {#if hasData && service.lastCheck}
-      · Last checked {new Date(service.lastCheck).toLocaleString()}
-    {:else if !hasData}
-      · Monitoring pending
-    {/if}
-  </p>
-  <UptimeBar
-    {history}
-    {incidents}
-    {onSegmentClick}
-    todayUptime={hasData ? service.uptimePercent : null}
-  />
+  {#if hasData}
+    <UptimeBar
+      {history}
+      {incidents}
+      {onSegmentClick}
+      todayUptime={null}
+    />
+  {:else}
+    <p class="text-xs text-[var(--muted-foreground)]">No history yet</p>
+  {/if}
 </div>

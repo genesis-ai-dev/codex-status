@@ -6,3 +6,6 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 [[kv_namespaces]]
 binding = "CODEX_STATUS"
 id = "1de1e08067c9419880e57dc1af01b28a"
+
+[vars]
+API_BASE = "https://api.frontierrnd.com"
