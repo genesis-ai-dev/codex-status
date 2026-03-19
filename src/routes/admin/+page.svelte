@@ -7,8 +7,18 @@
   let incidents = $state<Incident[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  const SERVICE_OPTIONS = [
+    { id: 'api-health', name: 'API Health' },
+    { id: 'extended-health', name: 'Extended Health' },
+    { id: 'dashboard', name: 'Cloud Sync' },
+    { id: 'auth', name: 'Authentication' },
+    { id: 'llm', name: 'AI Predictions' }
+  ];
+
   let createTitle = $state('');
-  let createServices = $state('');
+  let createServicesChecked = $state<Record<string, boolean>>(
+    Object.fromEntries(SERVICE_OPTIONS.map((s) => [s.id, false]))
+  );
   let updateIncidentId = $state('');
   let updateStatus = $state<Incident['status']>('monitoring');
   let updateBody = $state('');
@@ -47,6 +57,9 @@
     e.preventDefault();
     if (!key || !createTitle.trim()) return;
     error = null;
+    const services = SERVICE_OPTIONS.filter((s) => createServicesChecked[s.id]).map(
+      (s) => s.id
+    );
     const res = await fetch('/api/incidents', {
       method: 'POST',
       headers: {
@@ -55,7 +68,7 @@
       },
       body: JSON.stringify({
         title: createTitle.trim(),
-        services: createServices.split(',').map((s) => s.trim()).filter(Boolean)
+        services
       })
     });
     if (!res.ok) {
@@ -63,7 +76,7 @@
       return;
     }
     createTitle = '';
-    createServices = '';
+    createServicesChecked = Object.fromEntries(SERVICE_OPTIONS.map((s) => [s.id, false]));
     await fetchIncidents();
   }
 
@@ -157,12 +170,23 @@
           placeholder="Incident title"
           class="w-full rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm"
         />
-        <input
-          type="text"
-          bind:value={createServices}
-          placeholder="Affected services (comma-separated, e.g. api-health, auth)"
-          class="w-full rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm"
-        />
+        <fieldset class="space-y-2">
+          <legend class="text-sm text-[var(--muted-foreground)]">
+            Affected services (check all that apply)
+          </legend>
+          <div class="flex flex-wrap gap-4">
+            {#each SERVICE_OPTIONS as opt (opt.id)}
+              <label class="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  bind:checked={createServicesChecked[opt.id]}
+                  class="rounded border-[var(--border)]"
+                />
+                <span class="text-sm">{opt.name}</span>
+              </label>
+            {/each}
+          </div>
+        </fieldset>
         <button
           type="submit"
           class="rounded-lg bg-[var(--codex-teal)] px-4 py-2 text-sm font-medium text-[var(--codex-deep)]"
