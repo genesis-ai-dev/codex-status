@@ -89,8 +89,11 @@
 
 <div class="mx-auto max-w-2xl px-4 py-12 sm:px-6">
   <header class="mb-10">
-    <h1 class="text-2xl font-semibold tracking-tight">Codex Status</h1>
-    <p class="mt-1 text-sm text-[var(--muted-foreground)]">Real-time status for Codex API services</p>
+    <div class="mb-4 flex items-center gap-3">
+      <img src="/codex-logo-2024.svg" alt="Codex" class="h-8 w-8" />
+      <h1 class="text-2xl font-semibold tracking-tight">Codex Status</h1>
+    </div>
+    <p class="text-sm text-[var(--muted-foreground)]">Real-time status for Codex API services</p>
   </header>
 
   <!-- Live current status -->
