@@ -164,7 +164,12 @@
     </section>
 
     <p class="text-center text-xs text-[var(--muted-foreground)]">
-      History last updated {history.lastUpdated ?? '—'}
+      History last updated {history.lastUpdated
+        ? new Date(history.lastUpdated).toLocaleString(undefined, {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+          })
+        : '—'}
     </p>
   {/if}
 
