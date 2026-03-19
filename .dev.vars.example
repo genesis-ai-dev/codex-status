@@ -1,0 +1,5 @@
+# Copy to .dev.vars and fill in. Used for local `wrangler pages dev`.
+# Do NOT commit .dev.vars.
+
+ADMIN_API_KEY=your-admin-secret-key
+MONITOR_API_KEY=your-monitor-secret-key

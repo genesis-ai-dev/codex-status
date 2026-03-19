@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.625rem;
+  --background: #1A1A2E;
+  --foreground: #E8E6E3;
+  --card: #22223A;
+  --card-foreground: #E8E6E3;
+  --primary: #00D4AA;
+  --primary-foreground: #0A0A1A;
+  --muted: #2A2A42;
+  --muted-foreground: #8B8B9E;
+  --destructive: #E85D5D;
+  --border: rgba(255, 255, 255, 0.08);
+
+  --codex-deep: #1A1A2E;
+  --codex-surface: #22223A;
+  --codex-teal: #00D4AA;
+  --codex-teal-dim: #00B894;
+  --codex-gold: #E8B931;
+  --codex-gold-dim: #C9A028;
+  --codex-outage: #E85D5D;
+  --codex-muted: #8B8B9E;
+
+  --font-display: 'Newsreader', 'Georgia', serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-codex-deep: var(--codex-deep);
+  --color-codex-surface: var(--codex-surface);
+  --color-codex-teal: var(--codex-teal);
+  --color-codex-gold: var(--codex-gold);
+  --color-codex-outage: var(--codex-outage);
+  --font-family-display: var(--font-display);
+  --font-family-body: var(--font-body);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(0, 212, 170, 0.08), transparent),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(100, 80, 200, 0.06), transparent),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(232, 185, 49, 0.04), transparent);
+}
+
+.accent-gradient {
+  background: linear-gradient(135deg, #00D4AA 0%, #00E5BB 50%, #E8B931 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
