@@ -3,8 +3,35 @@
 @config "../tailwind.config.js";
 @custom-variant dark (&:is(.dark *));
 
+/* Light mode defaults */
 :root {
   --radius: 0.625rem;
+  --background: #F5F5F8;
+  --foreground: #1A1A2E;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A2E;
+  --primary: #00A882;
+  --primary-foreground: #FFFFFF;
+  --muted: #EAEAF2;
+  --muted-foreground: #5C5C7A;
+  --destructive: #C0392B;
+  --border: rgba(0, 0, 0, 0.09);
+
+  --codex-deep: #F5F5F8;
+  --codex-surface: #FFFFFF;
+  --codex-teal: #00A882;
+  --codex-teal-dim: #008B6C;
+  --codex-gold: #C08B10;
+  --codex-gold-dim: #A07008;
+  --codex-outage: #C0392B;
+  --codex-muted: #5C5C7A;
+
+  --font-display: 'Newsreader', 'Georgia', serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+/* Dark mode overrides */
+.dark {
   --background: #1A1A2E;
   --foreground: #E8E6E3;
   --card: #22223A;
@@ -24,9 +51,6 @@
   --codex-gold-dim: #C9A028;
   --codex-outage: #E85D5D;
   --codex-muted: #8B8B9E;
-
-  --font-display: 'Newsreader', 'Georgia', serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
 }
 
 @theme inline {
@@ -72,6 +96,14 @@ body {
 }
 
 .mesh-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(0, 168, 130, 0.07), transparent),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(100, 80, 200, 0.05), transparent),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(192, 139, 16, 0.04), transparent);
+}
+
+:is(.dark *).mesh-gradient,
+.dark .mesh-gradient {
   background:
     radial-gradient(ellipse 80% 60% at 20% 40%, rgba(0, 212, 170, 0.08), transparent),
     radial-gradient(ellipse 60% 50% at 80% 20%, rgba(100, 80, 200, 0.06), transparent),
