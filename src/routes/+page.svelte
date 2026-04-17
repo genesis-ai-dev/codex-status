@@ -178,7 +178,5 @@
 
   <footer class="mt-12 border-t border-[var(--border)] pt-6 text-center text-xs text-[var(--muted-foreground)]">
     <a href="https://codexeditor.app" class="hover:text-[var(--foreground)]">Codex</a>
-    <span class="mx-2">·</span>
-    <a href="/admin" class="hover:text-[var(--foreground)]">Admin</a>
   </footer>
 </div>

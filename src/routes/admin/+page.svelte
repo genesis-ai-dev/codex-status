@@ -4,6 +4,9 @@
 
   let adminKey = $state('');
   let storedKey = $state('');
+  let authVerified = $state(false);
+  let verifying = $state(false);
+  let keyError = $state<string | null>(null);
   let incidents = $state<Incident[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -38,13 +41,22 @@
   let updateStatus = $state<Incident['status']>('monitoring');
   let updateBody = $state('');
 
-  const key = $derived(storedKey || (typeof window !== 'undefined' ? sessionStorage.getItem('codex-status-admin-key') : null));
+  const key = $derived(authVerified ? storedKey : '');
 
-  function setKey(k: string) {
-    storedKey = k;
+  function clearStoredKey() {
+    storedKey = '';
+    authVerified = false;
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('codex-status-admin-key', k);
+      sessionStorage.removeItem('codex-status-admin-key');
     }
+  }
+
+  async function verifyKey(candidate: string): Promise<boolean> {
+    const res = await fetch('/api/admin/verify', {
+      method: 'POST',
+      headers: { 'x-admin-key': candidate }
+    });
+    return res.ok;
   }
 
   async function fetchIncidents() {
@@ -53,18 +65,44 @@
     incidents = data.incidents ?? [];
   }
 
-  onMount(() => {
+  onMount(async () => {
     const k = typeof window !== 'undefined' ? sessionStorage.getItem('codex-status-admin-key') : null;
-    if (k) storedKey = k;
-    fetchIncidents().finally(() => (loading = false));
+    if (k) {
+      const ok = await verifyKey(k);
+      if (ok) {
+        storedKey = k;
+        authVerified = true;
+      } else {
+        clearStoredKey();
+      }
+    }
+    await fetchIncidents();
+    loading = false;
   });
 
   async function handleKeySubmit(e: Event) {
     e.preventDefault();
-    if (adminKey.trim()) {
-      setKey(adminKey.trim());
+    const candidate = adminKey.trim();
+    if (!candidate) return;
+    keyError = null;
+    verifying = true;
+    try {
+      const ok = await verifyKey(candidate);
+      if (!ok) {
+        keyError = 'Invalid admin key.';
+        return;
+      }
+      storedKey = candidate;
+      authVerified = true;
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('codex-status-admin-key', candidate);
+      }
       adminKey = '';
       await fetchIncidents();
+    } catch (err) {
+      keyError = err instanceof Error ? err.message : 'Failed to verify key.';
+    } finally {
+      verifying = false;
     }
   }
 
@@ -90,6 +128,7 @@
     });
     if (!res.ok) {
       error = await res.text();
+      if (res.status === 401) clearStoredKey();
       return;
     }
     createTitle = '';
@@ -117,6 +156,7 @@
     });
     if (!res.ok) {
       error = await res.text();
+      if (res.status === 401) clearStoredKey();
       return;
     }
     updateIncidentId = '';
@@ -138,7 +178,7 @@
     Incident Admin
   </h1>
 
-  {#if !key}
+  {#if !authVerified}
     <form onsubmit={handleKeySubmit} class="mb-8">
       <label for="admin-key" class="mb-2 block text-sm text-[var(--muted-foreground)]">
         Admin API Key
@@ -149,26 +189,27 @@
           type="password"
           bind:value={adminKey}
           placeholder="Enter admin key"
-          class="flex-1 rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm"
+          disabled={verifying}
+          class="flex-1 rounded-lg border border-[var(--border)] bg-[var(--codex-surface)] px-3 py-2 text-sm disabled:opacity-60"
         />
         <button
           type="submit"
-          class="rounded-lg bg-[var(--codex-teal)] px-4 py-2 text-sm font-medium text-[var(--codex-deep)]"
+          disabled={verifying || !adminKey.trim()}
+          class="rounded-lg bg-[var(--codex-teal)] px-4 py-2 text-sm font-medium text-[var(--codex-deep)] disabled:opacity-60"
         >
-          Continue
+          {verifying ? 'Verifying…' : 'Continue'}
         </button>
       </div>
+      {#if keyError}
+        <p class="mt-2 text-sm text-[var(--codex-outage)]">{keyError}</p>
+      {/if}
     </form>
   {:else}
     <p class="mb-6 text-sm text-[var(--muted-foreground)]">
       Logged in. <button
         type="button"
         class="text-[var(--codex-teal)] underline"
-        onclick={() => {
-          setKey('');
-          storedKey = '';
-          if (typeof window !== 'undefined') sessionStorage.removeItem('codex-status-admin-key');
-        }}
+        onclick={clearStoredKey}
       >Log out</button>
     </p>
 
